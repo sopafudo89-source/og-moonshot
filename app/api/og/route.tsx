@@ -11,6 +11,40 @@ const SIZE = {
   height: 675,
 };
 
+function arrayBufferToBase64(buffer: ArrayBuffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return btoa(binary);
+}
+
+async function getLogoDataUrl(request: NextRequest) {
+  const logoUrl = new URL('/moonshot-logo.png', request.url).toString();
+
+  try {
+    const response = await fetch(logoUrl, {
+      cache: 'force-cache',
+    });
+
+    if (!response.ok) {
+      return logoUrl;
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = arrayBufferToBase64(arrayBuffer);
+
+    return `data:image/png;base64,${base64}`;
+  } catch {
+    return logoUrl;
+  }
+}
+
 function MoonshotLogo({ src }: { src: string }) {
   return (
     <div
@@ -43,7 +77,7 @@ export async function GET(request: NextRequest) {
 
   const tokenName = token.name || 'your token';
   const tokenImage = token.imageUrl;
-  const logoUrl = new URL('/moonshot-logo.png', request.url).toString();
+  const logoUrl = await getLogoDataUrl(request);
 
   return new ImageResponse(
     (
