@@ -24,25 +24,26 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   return btoa(binary);
 }
 
-async function getLogoDataUrl(request: NextRequest) {
-  const logoUrl = new URL('/moonshot-logo.png', request.url).toString();
+async function getLogoDataUrl() {
+  const logoUrl = process.env.LOGO_URL || '';
 
-  try {
-    const response = await fetch(logoUrl, {
-      cache: 'force-cache',
-    });
-
-    if (!response.ok) {
-      return logoUrl;
-    }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const base64 = arrayBufferToBase64(arrayBuffer);
-
-    return `data:image/png;base64,${base64}`;
-  } catch {
-    return logoUrl;
+  if (!logoUrl) {
+    throw new Error('LOGO_URL is not set');
   }
+
+  const response = await fetch(`${logoUrl}?v=1`, {
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Logo fetch failed: ${response.status}`);
+  }
+
+  const contentType = response.headers.get('content-type') || 'image/png';
+  const arrayBuffer = await response.arrayBuffer();
+  const base64 = arrayBufferToBase64(arrayBuffer);
+
+  return `data:${contentType};base64,${base64}`;
 }
 
 function MoonshotLogo({ src }: { src: string }) {
@@ -51,18 +52,19 @@ function MoonshotLogo({ src }: { src: string }) {
       style={{
         display: 'flex',
         alignItems: 'center',
-        height: 64,
+        height: 70,
+        width: 300,
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt="Moonshot"
-        width={270}
-        height={64}
+        width={300}
+        height={70}
         style={{
-          width: 270,
-          height: 64,
+          width: 300,
+          height: 70,
           objectFit: 'contain',
         }}
       />
@@ -77,7 +79,7 @@ export async function GET(request: NextRequest) {
 
   const tokenName = token.name || 'your token';
   const tokenImage = token.imageUrl;
-  const logoUrl = await getLogoDataUrl(request);
+  const logoUrl = await getLogoDataUrl();
 
   return new ImageResponse(
     (
