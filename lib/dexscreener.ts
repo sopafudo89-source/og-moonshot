@@ -1,6 +1,7 @@
 import { DEX_CACHE_SECONDS } from '@/lib/config';
 
 export type TokenData = {
+  found: boolean;
   contract: string;
   name: string;
   symbol: string;
@@ -79,6 +80,7 @@ function normalizePairsFromResponse(data: any): AnyPair[] {
   if (Array.isArray(data)) return data.filter(Boolean);
   if (Array.isArray(data?.pairs)) return data.pairs.filter(Boolean);
   if (data?.pair) return [data.pair];
+
   return [];
 }
 
@@ -104,6 +106,7 @@ function chooseMainPair(pairs: AnyPair[]) {
   return [...pairs].sort((a, b) => {
     const aLiq = toNumber(a?.liquidity?.usd);
     const bLiq = toNumber(b?.liquidity?.usd);
+
     return bLiq - aLiq;
   })[0];
 }
@@ -221,6 +224,7 @@ export async function getTokenData(contract: string): Promise<TokenData> {
     DEFAULT_TOKEN_IMAGE;
 
   const data: TokenData = {
+    found: true,
     contract: cleanContract,
     name,
     symbol,
