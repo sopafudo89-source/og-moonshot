@@ -4,18 +4,19 @@ import { getTokenData } from '@/lib/dexscreener';
 import { safeContract, shortAddress } from '@/lib/utils';
 
 type VotePageProps = {
-  searchParams: Promise<{ contract?: string }>;
+  searchParams: Promise<{ contract?: string; v?: string }>;
 };
 
 const SPOOF_OG_URL = 'https://moonshot.money';
 const SPOOF_SITE_NAME = 'Moonshot';
 
-function buildUrls(contract: string) {
+function buildUrls(contract: string, v?: string) {
   const encoded = encodeURIComponent(contract);
+  const version = v ? `&v=${encodeURIComponent(v)}` : '';
 
   return {
-    canonical: `${PUBLIC_BASE_URL}/vote?contract=${encoded}`,
-    ogImage: `${PUBLIC_BASE_URL}/api/og?contract=${encoded}`,
+    canonical: `${PUBLIC_BASE_URL}/vote?contract=${encoded}${version}`,
+    ogImage: `${PUBLIC_BASE_URL}/api/og?contract=${encoded}${version}`,
     landing: `${LANDING_BASE_URL}/vote?contract=${encoded}`,
   };
 }
@@ -24,7 +25,7 @@ export async function generateMetadata({ searchParams }: VotePageProps): Promise
   const params = await searchParams;
   const contract = safeContract(params.contract);
   const token = await getTokenData(contract);
-  const urls = buildUrls(contract);
+  const urls = buildUrls(contract, params.v);
 
   const title = token.found
     ? `Vote for ${token.name} (${token.symbol}) to get listed!`
@@ -38,22 +39,16 @@ export async function generateMetadata({ searchParams }: VotePageProps): Promise
     title,
     description,
 
-    // Canonical оставляем на твоём домене.
     alternates: {
       canonical: urls.canonical,
     },
 
     openGraph: {
       type: 'website',
-
-      // Вот это влияет на то, какой домен X может показать в карточке.
       url: SPOOF_OG_URL,
       siteName: SPOOF_SITE_NAME,
-
       title,
       description,
-
-      // Картинка остаётся твоей динамической.
       images: [
         {
           url: urls.ogImage,
@@ -68,13 +63,10 @@ export async function generateMetadata({ searchParams }: VotePageProps): Promise
       card: 'summary_large_image',
       title,
       description,
-
-      // Картинка остаётся твоей динамической.
       images: [urls.ogImage],
     },
 
     other: {
-      // Дополнительные meta на случай, если X их учитывает.
       'og:site_name': SPOOF_SITE_NAME,
       'twitter:domain': 'moonshot.money',
       'twitter:url': SPOOF_OG_URL,
@@ -87,7 +79,7 @@ export default async function VotePage({ searchParams }: VotePageProps) {
   const params = await searchParams;
   const contract = safeContract(params.contract);
   const token = await getTokenData(contract);
-  const { landing } = buildUrls(contract);
+  const { landing } = buildUrls(contract, params.v);
 
   return (
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 }}>
