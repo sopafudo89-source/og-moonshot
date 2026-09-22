@@ -7,8 +7,15 @@ type VotePageProps = {
   searchParams: Promise<{ contract?: string; v?: string }>;
 };
 
-const SPOOF_OG_URL = 'https://moonshot.money';
-const SPOOF_SITE_NAME = 'Moonshot';
+const SITE_NAME = 'Moonshot';
+
+function getDomain(url: string) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  }
+}
 
 function buildUrls(contract: string, v?: string) {
   const encoded = encodeURIComponent(contract);
@@ -26,6 +33,7 @@ export async function generateMetadata({ searchParams }: VotePageProps): Promise
   const contract = safeContract(params.contract);
   const token = await getTokenData(contract);
   const urls = buildUrls(contract, params.v);
+  const publicDomain = getDomain(PUBLIC_BASE_URL);
 
   const title = token.found
     ? `Vote for ${token.name} (${token.symbol}) to get listed!`
@@ -45,8 +53,8 @@ export async function generateMetadata({ searchParams }: VotePageProps): Promise
 
     openGraph: {
       type: 'website',
-      url: SPOOF_OG_URL,
-      siteName: SPOOF_SITE_NAME,
+      url: urls.canonical,
+      siteName: SITE_NAME,
       title,
       description,
       images: [
@@ -67,9 +75,9 @@ export async function generateMetadata({ searchParams }: VotePageProps): Promise
     },
 
     other: {
-      'og:site_name': SPOOF_SITE_NAME,
-      'twitter:domain': 'moonshot.money',
-      'twitter:url': SPOOF_OG_URL,
+      'og:site_name': SITE_NAME,
+      'twitter:domain': publicDomain,
+      'twitter:url': urls.canonical,
       'twitter:image:src': urls.ogImage,
     },
   };
