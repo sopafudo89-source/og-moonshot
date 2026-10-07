@@ -124,14 +124,17 @@ async function getTokenProfileImage(contract: string) {
     const now = Date.now();
 
     if (!tokenProfilesCache || now > tokenProfilesCacheExpiresAt) {
-      const response = await fetch('https://api.dexscreener.com/token-profiles/latest/v1', {
-        headers: {
-          accept: 'application/json',
-        },
-        next: {
-          revalidate: 300,
-        },
-      });
+      const response = await fetch(
+        'https://api.dexscreener.com/token-profiles/latest/v1',
+        {
+          headers: {
+            accept: 'application/json',
+          },
+          next: {
+            revalidate: 300,
+          },
+        }
+      );
 
       if (!response.ok) return '';
 
@@ -161,7 +164,9 @@ async function getPairs(contract: string) {
     `https://api.dexscreener.com/token-pairs/v1/solana/${encodeURIComponent(contract)}`,
   ];
 
-  const settled = await Promise.allSettled(urls.map((url) => fetchJson(url)));
+  const settled = await Promise.allSettled(
+    urls.map((url) => fetchJson(url))
+  );
 
   const allPairs: AnyPair[] = [];
 
@@ -190,8 +195,28 @@ export async function getTokenData(contract: string): Promise<TokenData> {
 
   const pairs = await getPairs(cleanContract);
 
+  // DexScreener can occasionally return no pairs even for an existing token.
+  // Do not crash /vote or /api/og in that case.
   if (!pairs.length) {
-    throw new Error(`Token not found on DexScreener: ${cleanContract}`);
+    return {
+      found: false,
+      contract: cleanContract,
+      name: 'Unknown Token',
+      symbol: 'TOKEN',
+      imageUrl: DEFAULT_TOKEN_IMAGE,
+      priceUsd: 0,
+      priceFormatted: '$0',
+      change24h: 0,
+      change24hFormatted: '0.00%',
+      fdv: 0,
+      fdvFormatted: '$0',
+      liquidity: 0,
+      liquidityFormatted: '$0',
+      volume24h: 0,
+      volume24hFormatted: '$0',
+      buys24h: 0,
+      sells24h: 0,
+    };
   }
 
   const mainPair = chooseMainPair(pairs);
