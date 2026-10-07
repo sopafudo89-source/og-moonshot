@@ -195,28 +195,8 @@ export async function getTokenData(contract: string): Promise<TokenData> {
 
   const pairs = await getPairs(cleanContract);
 
-  // DexScreener can occasionally return no pairs even for an existing token.
-  // Do not crash /vote or /api/og in that case.
   if (!pairs.length) {
-    return {
-      found: false,
-      contract: cleanContract,
-      name: 'Unknown Token',
-      symbol: 'TOKEN',
-      imageUrl: DEFAULT_TOKEN_IMAGE,
-      priceUsd: 0,
-      priceFormatted: '$0',
-      change24h: 0,
-      change24hFormatted: '0.00%',
-      fdv: 0,
-      fdvFormatted: '$0',
-      liquidity: 0,
-      liquidityFormatted: '$0',
-      volume24h: 0,
-      volume24hFormatted: '$0',
-      buys24h: 0,
-      sells24h: 0,
-    };
+    throw new Error(`Token not found on DexScreener: ${cleanContract}`);
   }
 
   const mainPair = chooseMainPair(pairs);
